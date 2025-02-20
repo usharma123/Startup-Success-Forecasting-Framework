@@ -40,21 +40,21 @@ class StartupFramework:
         logger.info(f"VCScout prediction: {prediction}")
 
         # Perform agent analyses
-        market_analysis = self.market_agent.analyze(startup_info.dict(), "advanced")
-        product_analysis = self.product_agent.analyze(startup_info.dict(), "advanced")
-        founder_analysis = self.founder_agent.analyze(startup_info.dict(), "advanced")
+        market_analysis = self.market_agent.analyze(startup_info.model_dump(), "advanced")
+        product_analysis = self.product_agent.analyze(startup_info.model_dump(), "advanced")
+        founder_analysis = self.founder_agent.analyze(startup_info.model_dump(), "advanced")
 
         # Log the startup_info for debugging
-        logger.debug(f"Startup info: {startup_info.dict()}")
+        logger.debug(f"Startup info: {startup_info.model_dump()}")
 
         founder_segmentation = self.founder_agent.segment_founder(startup_info.founder_backgrounds)
-        founder_idea_fit = self.founder_agent.calculate_idea_fit(startup_info.dict(), startup_info.founder_backgrounds)
+        founder_idea_fit = self.founder_agent.calculate_idea_fit(startup_info.model_dump(), startup_info.founder_backgrounds)
 
         # Integrate analyses
         integrated_analysis = self.integration_agent.integrated_analysis_pro(
-            market_info=market_analysis.dict(),
-            product_info=product_analysis.dict(),
-            founder_info=founder_analysis.dict(),  
+            market_info=market_analysis.model_dump(),
+            product_info=product_analysis.model_dump(),
+            founder_info=founder_analysis.model_dump(),  
             founder_idea_fit=founder_idea_fit,
             founder_segmentation=founder_segmentation,
             rf_prediction=prediction,
@@ -67,16 +67,16 @@ class StartupFramework:
         )
 
         return {
-            'Final Analysis': integrated_analysis.dict(),
-            'Market Analysis': market_analysis.dict(),
-            'Product Analysis': product_analysis.dict(),
-            'Founder Analysis': founder_analysis.dict(),
+            'Final Analysis': integrated_analysis.model_dump(),
+            'Market Analysis': market_analysis.model_dump(),
+            'Product Analysis': product_analysis.model_dump(),
+            'Founder Analysis': founder_analysis.model_dump(),
             'Founder Segmentation': founder_segmentation,
             'Founder Idea Fit': founder_idea_fit[0],
             'Categorical Prediction': prediction,
-            'Categorization': categorization.dict(),
-            'Quantitative Decision': quant_decision.dict(),
-            'Startup Info': startup_info.dict()
+            'Categorization': categorization.model_dump(),
+            'Quantitative Decision': quant_decision.model_dump(),
+            'Startup Info': startup_info.model_dump()
         }
 
     def analyze_startup_natural(self, startup_info_str: str) -> Dict[str, Any]:
@@ -100,9 +100,9 @@ class StartupFramework:
         logger.info(f"VCScout prediction: {prediction}")
 
         # Perform agent analyses using natural language mode
-        market_analysis = self.market_agent.analyze(startup_info.dict(), "natural_language_advanced")
-        product_analysis = self.product_agent.analyze(startup_info.dict(), "natural_language_advanced")
-        founder_analysis = self.founder_agent.analyze(startup_info.dict(), "advanced")  # Keep founder analysis in advanced mode
+        market_analysis = self.market_agent.analyze(startup_info.model_dump(), "natural_language_advanced")
+        product_analysis = self.product_agent.analyze(startup_info.model_dump(), "natural_language_advanced")
+        founder_analysis = self.founder_agent.analyze(startup_info.model_dump(), "advanced")
 
         # Log the analyses for debugging
         logger.debug(f"Market Analysis: {market_analysis}")
@@ -111,13 +111,13 @@ class StartupFramework:
 
         # Get founder specific metrics
         founder_segmentation = self.founder_agent.segment_founder(startup_info.founder_backgrounds)
-        founder_idea_fit = self.founder_agent.calculate_idea_fit(startup_info.dict(), startup_info.founder_backgrounds)
+        founder_idea_fit = self.founder_agent.calculate_idea_fit(startup_info.model_dump(), startup_info.founder_backgrounds)
 
         # Integrate analyses
         integrated_analysis = self.integration_agent.integrated_analysis_pro(
-            market_info={"analysis": market_analysis},  # Wrap in dict to maintain compatibility
+            market_info={"analysis": market_analysis},
             product_info={"analysis": product_analysis},
-            founder_info=founder_analysis.dict(),
+            founder_info=founder_analysis.model_dump(),
             founder_idea_fit=founder_idea_fit,
             founder_segmentation=founder_segmentation,
             rf_prediction=prediction,
@@ -130,16 +130,16 @@ class StartupFramework:
         )
 
         return {
-            'Final Analysis': integrated_analysis.dict(),
-            'Market Analysis': market_analysis,  # Direct natural language output
-            'Product Analysis': product_analysis,  # Direct natural language output
-            'Founder Analysis': founder_analysis.dict(),
+            'Final Analysis': integrated_analysis.model_dump(),
+            'Market Analysis': market_analysis,
+            'Product Analysis': product_analysis,
+            'Founder Analysis': founder_analysis.model_dump(),
             'Founder Segmentation': founder_segmentation,
             'Founder Idea Fit': founder_idea_fit[0],
             'Categorical Prediction': prediction,
-            'Categorization': categorization.dict(),
-            'Quantitative Decision': quant_decision.dict(),
-            'Startup Info': startup_info.dict()
+            'Categorization': categorization.model_dump(),
+            'Quantitative Decision': quant_decision.model_dump(),
+            'Startup Info': startup_info.model_dump()
         }
 
 def main():

@@ -43,7 +43,7 @@ class BaselineFramework(BaseAgent):
         
         try:
             response = self.get_json_response(BaselineAnalysis, prompt, "Startup Info: " + startup_info)
-            return response.dict()
+            return response.model_dump()
             
         except Exception as e:
             self.logger.error(f"Error in baseline analysis: {str(e)}")
