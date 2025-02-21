@@ -101,7 +101,7 @@ class VCScoutAgent(BaseAgent):
 
     def evaluate(self, startup_info: StartupInfo, mode: str) -> StartupEvaluation:
         self.logger.info(f"Starting startup evaluation in {mode} mode")
-        startup_info_str = startup_info.json()
+        startup_info_str = startup_info.model_dump_json()
         self.logger.debug(f"Startup info: {startup_info_str}")
         
         if mode == "basic":
@@ -115,7 +115,7 @@ class VCScoutAgent(BaseAgent):
 
     def side_evaluate(self, startup_info: StartupInfo) -> Tuple[str, StartupCategorization]:
         self.logger.info("Starting side evaluation")
-        startup_info_str = startup_info.json()
+        startup_info_str = startup_info.model_dump_json()
         categorization = self.get_json_response(StartupCategorization, self._get_categorization_prompt(), startup_info_str)
         self.logger.info("Categorization completed")
 

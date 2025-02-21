@@ -20,7 +20,7 @@ except Exception as e:
     raise
 
 def main():
-    st.title("Startup Success Forecasting Framework")
+    st.title("Startup Evaluation Framework")
 
     try:
         framework = StartupFramework()

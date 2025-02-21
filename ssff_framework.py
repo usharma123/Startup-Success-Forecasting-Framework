@@ -39,8 +39,24 @@ class StartupFramework:
         prediction, categorization = self.vc_scout_agent.side_evaluate(startup_info)
         logger.info(f"VCScout prediction: {prediction}")
 
+        # Before market analysis
+        logger.info("=== Starting Market Analysis Phase ===")
+        logger.debug(f"Market Agent exists: {hasattr(self, 'market_agent')}")
+        logger.debug(f"Startup info type: {type(startup_info)}")
+
+        try:
+            logger.info("Attempting to call market agent analyze()")
+            market_analysis = self.market_agent.analyze(startup_info.model_dump(), mode="advanced")
+            logger.info("Market Analysis completed successfully")
+            logger.debug(f"Market analysis result: {market_analysis}")
+        except AttributeError as e:
+            logger.error(f"Market agent not properly initialized: {str(e)}")
+        except Exception as e:
+            logger.error(f"Market analysis failed with error: {str(e)}", exc_info=True)
+
+        logger.info("=== Ending Market Analysis Phase ===")
+
         # Perform agent analyses
-        market_analysis = self.market_agent.analyze(startup_info.model_dump(), "advanced")
         product_analysis = self.product_agent.analyze(startup_info.model_dump(), "advanced")
         founder_analysis = self.founder_agent.analyze(startup_info.model_dump(), "advanced")
 
