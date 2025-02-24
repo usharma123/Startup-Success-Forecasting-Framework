@@ -136,10 +136,51 @@ def display_final_results(result, mode):
     # Display Market Info
     st.write("### Market Information")
     market_info = result['Market Info']
-    st.write(f"Market Score: {market_info.get('market_score', 'N/A')}")
-    st.write(f"Market Analysis: {market_info.get('market_analysis', 'N/A')}")
-    st.write(f"Competition Analysis: {market_info.get('competition_analysis', 'N/A')}")
-    st.write(f"Growth Potential: {market_info.get('growth_potential', 'N/A')}")
+    
+    # Market Size Analysis
+    st.write("#### Market Size")
+    size_value = market_info.get('market_size', 'N/A')
+    st.write(size_value)
+    if size_value != 'N/A':
+        st.info("💡 This represents the total addressable market (TAM) potential.")
+    
+    # Growth Analysis
+    st.write("#### Growth Rate")
+    growth_value = market_info.get('growth_rate', 'N/A')
+    st.write(growth_value)
+    if growth_value != 'N/A':
+        st.info("💡 Indicates the compound annual growth rate (CAGR) projection.")
+    
+    # Competition Analysis
+    st.write("#### Competitive Landscape")
+    competition_value = market_info.get('competition', 'N/A')
+    st.write(competition_value)
+    if competition_value != 'N/A':
+        st.warning("⚠️ Key competitors and market dynamics to consider.")
+    
+    # Market Trends
+    st.write("#### Market Trends")
+    trends_value = market_info.get('market_trends', 'N/A')
+    if trends_value != 'N/A':
+        trends_list = [trend.strip() for trend in trends_value.split(',')]
+        for trend in trends_list:
+            st.write(f"• {trend}")
+    
+    # Viability Score
+    st.write("#### Market Viability Score")
+    viability_score = market_info.get('viability_score', 'N/A')
+    if viability_score != 'N/A':
+        score = int(viability_score)
+        st.progress(score/10)
+        st.write(f"Score: {score}/10")
+        
+        # Add context based on score
+        if score >= 8:
+            st.success("🌟 Strong market potential")
+        elif score >= 6:
+            st.info("📈 Moderate market potential")
+        else:
+            st.warning("⚠️ Challenging market conditions")
 
     # Display Product Info
     st.write("### Product Information")
