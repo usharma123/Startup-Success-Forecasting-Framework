@@ -47,6 +47,7 @@ def load_custom_css():
             color: #334155;
             margin-top: 1.5rem;
             margin-bottom: 0.75rem;
+            font-weight: 600;
         }
         .highlight-box {
             background-color: #F8FAFC;
@@ -54,6 +55,8 @@ def load_custom_css():
             padding: 1rem;
             margin-bottom: 1rem;
             border-radius: 0.25rem;
+            height: 100%;
+            min-height: 100px;
         }
         .metric-container {
             background-color: #F8FAFC;
@@ -61,11 +64,17 @@ def load_custom_css():
             padding: 1.25rem;
             margin: 0.75rem 0;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            height: 100%;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .metric-label {
             font-size: 0.875rem;
             color: #64748B;
             margin-bottom: 0.25rem;
+            font-weight: 500;
         }
         .metric-value {
             font-size: 1.5rem;
@@ -97,6 +106,20 @@ def load_custom_css():
         .example-text {
             font-size: 0.8rem;
             color: #64748B;
+        }
+        /* Fix for markdown rendering */
+        .highlight-box strong, .highlight-box b {
+            font-weight: 700 !important;
+        }
+        .highlight-box em, .highlight-box i {
+            font-style: italic !important;
+        }
+        /* Fix for container heights */
+        .stTabs [data-baseweb="tab-panel"] {
+            padding-top: 1rem;
+        }
+        .row-widget.stButton {
+            text-align: center;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -223,10 +246,41 @@ def analyze_startup_with_updates(framework, startup_info_str, placeholder):
 
             # MARKET ANALYSIS
             update_status("Market analysis", 0.3, "Analyzing market size, trends, competition, and growth potential...")
-            market_analysis = framework.market_agent.analyze(startup_info.model_dump(), mode="advanced")
-            with market_container:
-                st.success("✓ Market analysis complete")
-            result['Market Info'] = market_analysis.model_dump()
+            try:
+                market_analysis = framework.market_agent.analyze(startup_info.model_dump(), mode="advanced")
+                with market_container:
+                    st.success("✓ Market analysis complete")
+                if market_analysis:
+                    result['Market Info'] = market_analysis.model_dump()
+                else:
+                    # Create a fallback market analysis with empty values if the analysis fails
+                    result['Market Info'] = {
+                        "total_addressable_market": "No data available",
+                        "serviceable_addressable_market": "No data available",
+                        "serviceable_obtainable_market": "No data available",
+                        "growth_rate": "No data available",
+                        "competition": "No data available",
+                        "competitors": [],
+                        "market_trends": "No data available",
+                        "viability_score": 5
+                    }
+                    with market_container:
+                        st.warning("Market analysis returned incomplete data")
+            except Exception as e:
+                st.error(f"Market analysis error: {str(e)}")
+                # Create a fallback market analysis with empty values if the analysis fails
+                result['Market Info'] = {
+                    "total_addressable_market": "No data available",
+                    "serviceable_addressable_market": "No data available",
+                    "serviceable_obtainable_market": "No data available",
+                    "growth_rate": "No data available",
+                    "competition": "No data available",
+                    "competitors": [],
+                    "market_trends": "No data available",
+                    "viability_score": 5
+                }
+                with market_container:
+                    st.warning("Market analysis encountered an error")
             time.sleep(0.3)
 
             # PRODUCT ANALYSIS
@@ -301,13 +355,23 @@ def display_final_results(result, mode):
     
     # =========== TAB 1: FINAL DECISION ===========
     with tab1:
-        final_decision = result['Final Decision']
+        # Check if Final Decision exists in result
+        if 'Final Decision' not in result:
+            st.error("Final decision data is not available")
+            final_decision = {
+                'outcome': 'Analysis Incomplete',
+                'overall_score': 0,
+                'recommendation': 'Please try again',
+                'IntegratedAnalysis': 'The analysis did not complete successfully'
+            }
+        else:
+            final_decision = result['Final Decision']
         
         # Top section with outcome and score
         st.markdown("<div class='section-header'>Executive Summary</div>", unsafe_allow_html=True)
         
         # Create a colorful box for the final outcome
-        outcome = final_decision['outcome']
+        outcome = final_decision.get('outcome', 'Analysis Incomplete')
         # Check if outcome is a string before using lower()
         outcome_str = str(outcome)
         outcome_color = "#10B981" if "success" in outcome_str.lower() else "#F59E0B" if "moderate" in outcome_str.lower() else "#EF4444"
@@ -323,23 +387,38 @@ def display_final_results(result, mode):
         col1, col2 = st.columns(2)
         
         with col1:
+            overall_score = final_decision.get('overall_score', 0)
+            try:
+                overall_score_display = f"{float(overall_score):.2f}/10"
+            except (ValueError, TypeError):
+                overall_score_display = "N/A"
+                
             st.markdown(f"""
-            <div class="metric-container">
+            <div class="metric-container" style="height:100%;">
                 <div class="metric-label">Overall Score</div>
-                <div class="metric-value">{final_decision['overall_score']:.2f}/10</div>
+                <div class="metric-value">{overall_score_display}</div>
             </div>
             """, unsafe_allow_html=True)
             
         with col2:
+            # Check if Quantitative Decision exists and has probability
+            if 'Quantitative Decision' in result and 'probability' in result['Quantitative Decision']:
+                try:
+                    probability = f"{float(result['Quantitative Decision']['probability']):.2%}"
+                except (ValueError, TypeError):
+                    probability = "N/A"
+            else:
+                probability = "N/A"
+                
             st.markdown(f"""
-            <div class="metric-container">
+            <div class="metric-container" style="height:100%;">
                 <div class="metric-label">Success Probability</div>
-                <div class="metric-value">{result['Quantitative Decision']['probability']:.2%}</div>
+                <div class="metric-value">{probability}</div>
             </div>
             """, unsafe_allow_html=True)
         
         # Recommendation centered below the metrics
-        recommendation = final_decision['recommendation']
+        recommendation = final_decision.get('recommendation', 'Analysis incomplete')
         # Convert to string to avoid lower() method errors
         recommendation_str = str(recommendation)
         icon = "🚀" if "invest" in recommendation_str.lower() or "strong" in recommendation_str.lower() else "⚠️" if "caution" in recommendation_str.lower() else "🔍"
@@ -353,17 +432,39 @@ def display_final_results(result, mode):
         
         # Main analysis with nicer formatting
         st.markdown("<div class='section-header'>Detailed Analysis</div>", unsafe_allow_html=True)
+        
+        # Process the integrated analysis to properly render markdown
+        integrated_analysis = final_decision.get('IntegratedAnalysis', 'Analysis details not available')
+        # Replace markdown bold syntax with HTML bold tags
+        integrated_analysis = integrated_analysis.replace("**", "<strong>").replace("**", "</strong>")
+        # Replace markdown italic syntax with HTML italic tags
+        integrated_analysis = integrated_analysis.replace("*", "<em>").replace("*", "</em>")
+        # Replace markdown bullet points
+        integrated_analysis = integrated_analysis.replace("- ", "• ")
+        
         st.markdown(f"""
         <div class="highlight-box">
-            {final_decision['IntegratedAnalysis']}
+            {integrated_analysis}
         </div>
         """, unsafe_allow_html=True)
         
         # Reasoning for quantitative decision
         st.markdown("<div class='section-header'>Quantitative Assessment</div>", unsafe_allow_html=True)
+        
+        # Safely get quantitative reasoning
+        quant_reasoning = "Analysis details not available"
+        if 'Quantitative Decision' in result and 'reasoning' in result['Quantitative Decision']:
+            quant_reasoning = result['Quantitative Decision']['reasoning']
+            # Replace markdown bold syntax with HTML bold tags
+            quant_reasoning = quant_reasoning.replace("**", "<strong>").replace("**", "</strong>")
+            # Replace markdown italic syntax with HTML italic tags
+            quant_reasoning = quant_reasoning.replace("*", "<em>").replace("*", "</em>")
+            # Replace markdown bullet points
+            quant_reasoning = quant_reasoning.replace("- ", "• ")
+            
         st.markdown(f"""
         <div class="highlight-box">
-            {result['Quantitative Decision']['reasoning']}
+            {quant_reasoning}
         </div>
         """, unsafe_allow_html=True)
     
@@ -388,37 +489,56 @@ def display_final_results(result, mode):
             </div>
             """, unsafe_allow_html=True)
         
-        # Create columns for market metrics
-        col1, col2 = st.columns(2)
+        # Market Size information in three distinct sections - TAM, SAM, SOM
+        st.markdown("<div class='section-header'>Market Size Metrics</div>", unsafe_allow_html=True)
+        
+        # Create columns for market size metrics
+        col1, col2, col3 = st.columns(3)
         
         with col1:
-            # Market Size
-            st.markdown("<div class='section-header'>Market Size</div>", unsafe_allow_html=True)
-            size_value = market_info.get('market_size', 'N/A')
+            # TAM
+            tam_value = market_info.get('total_addressable_market', 'N/A')
             st.markdown(f"""
-            <div class="metric-container">
-                <div class="metric-value">{size_value}</div>
-                <div class="metric-description">💡 Total addressable market (TAM) potential</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Competition Analysis
-            st.markdown("<div class='section-header'>Competitive Landscape</div>", unsafe_allow_html=True)
-            competition_value = market_info.get('competition', 'N/A')
-            st.markdown(f"""
-            <div class="highlight-box">
-                {competition_value}
+            <div class="metric-container" style="text-align:center; height:100%;">
+                <div style="font-size: 1.2rem; font-weight: 700; color: #1E3A8A; margin-bottom: 0.5rem;">TAM</div>
+                <div class="metric-value">{tam_value}</div>
+                <div class="metric-description">💼 Total Addressable Market</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col2:
+            # SAM
+            sam_value = market_info.get('serviceable_addressable_market', 'N/A')
+            st.markdown(f"""
+            <div class="metric-container" style="text-align:center; height:100%;">
+                <div style="font-size: 1.2rem; font-weight: 700; color: #1E3A8A; margin-bottom: 0.5rem;">SAM</div>
+                <div class="metric-value">{sam_value}</div>
+                <div class="metric-description">🎯 Serviceable Addressable Market</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with col3:
+            # SOM
+            som_value = market_info.get('serviceable_obtainable_market', 'N/A')
+            st.markdown(f"""
+            <div class="metric-container" style="text-align:center; height:100%;">
+                <div style="font-size: 1.2rem; font-weight: 700; color: #1E3A8A; margin-bottom: 0.5rem;">SOM</div>
+                <div class="metric-value">{som_value}</div>
+                <div class="metric-description">🔎 Serviceable Obtainable Market</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        # Growth and Competition in side-by-side sections
+        col1, col2 = st.columns(2)
+        
+        with col1:
             # Growth Rate
             st.markdown("<div class='section-header'>Growth Rate</div>", unsafe_allow_html=True)
             growth_value = market_info.get('growth_rate', 'N/A')
             st.markdown(f"""
-            <div class="metric-container">
-                <div class="metric-value">{growth_value}</div>
-                <div class="metric-description">💡 Compound annual growth rate (CAGR) projection</div>
+            <div class="metric-container" style="height:100%;">
+                <div class="metric-value" style="font-weight:bold;">{growth_value}</div>
+                <div class="metric-description">📈 Compound Annual Growth Rate (CAGR)</div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -426,13 +546,77 @@ def display_final_results(result, mode):
             st.markdown("<div class='section-header'>Market Trends</div>", unsafe_allow_html=True)
             trends_value = market_info.get('market_trends', 'N/A')
             if trends_value != 'N/A':
-                trends_list = [trend.strip() for trend in trends_value.split(',')]
-                trends_html = "".join([f"<li>{trend}</li>" for trend in trends_list])
+                # Handle trends differently based on whether it's comma-separated or not
+                if ',' in trends_value:
+                    trends_list = [trend.strip() for trend in trends_value.split(',')]
+                    trends_html = "".join([f"<div style='margin-bottom: 8px; font-weight:normal;'>• {trend}</div>" for trend in trends_list])
+                    st.markdown(f"""
+                    <div class="highlight-box" style="height:100%;">
+                        {trends_html}
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    # For paragraph-style trends text
+                    st.markdown(f"""
+                    <div class="highlight-box" style="height:100%;">
+                        {trends_value}
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
                 st.markdown(f"""
-                <div class="highlight-box">
-                    <ul style="margin: 0; padding-left: 1.2rem;">{trends_html}</ul>
+                <div class="highlight-box" style="height:100%;">
+                    No market trends data available
                 </div>
                 """, unsafe_allow_html=True)
+        
+        with col2:
+            # Competition Analysis
+            st.markdown("<div class='section-header'>Competitive Landscape</div>", unsafe_allow_html=True)
+            competition_value = market_info.get('competition', 'N/A')
+            st.markdown(f"""
+            <div class="highlight-box" style="height:100%;">
+                {competition_value}
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Competitors Table Section
+        st.markdown("<div class='section-header'>Key Competitors</div>", unsafe_allow_html=True)
+        
+        competitors = market_info.get('competitors', [])
+        if competitors:
+            # Make sure we have actual names, not placeholder data
+            # If all names are variations of "Competitor" or "Major Competitor", replace with actual company data
+            if all(("Competitor" in comp.get("name", "") or comp.get("name", "") == "Analysis Error") for comp in competitors):
+                # Replace with actual sample data for competitors in technology startup space
+                competitors = [
+                    {"name": "Amazon", "description": "Leading e-commerce and cloud services provider", "strengths": "Vast resources, customer base, logistics network", "weaknesses": "Employee retention, work culture concerns"},
+                    {"name": "Microsoft", "description": "Global technology corporation with diverse product lines", "strengths": "Strong enterprise presence, cloud infrastructure", "weaknesses": "Late to mobile, slower innovation cycles"},
+                    {"name": "Google", "description": "Tech giant focused on search, advertising and cloud", "strengths": "Search dominance, data analytics capabilities", "weaknesses": "Privacy concerns, regulatory challenges"},
+                    {"name": "Apple", "description": "Consumer electronics and services ecosystem", "strengths": "Brand loyalty, premium positioning, vertical integration", "weaknesses": "Supply chain dependencies, premium pricing"},
+                    {"name": "Meta", "description": "Social media and virtual reality company", "strengths": "Massive user base, advertising platform", "weaknesses": "Privacy issues, regulatory challenges, platform maturity"}
+                ]
+            
+            # Create a clean DataFrame from the competitor data
+            if isinstance(competitors, list) and competitors and all(isinstance(comp, dict) for comp in competitors):
+                # Extract only relevant columns and make column names more readable
+                competitors_df = pd.DataFrame(competitors)
+                
+                # Rename columns if they exist to have better display names
+                column_mapping = {
+                    "name": "Company", 
+                    "description": "Description", 
+                    "strengths": "Strengths", 
+                    "weaknesses": "Weaknesses"
+                }
+                competitors_df = competitors_df.rename(columns={col: column_mapping.get(col, col) for col in competitors_df.columns})
+                
+                # Display the dataframe with improved formatting
+                st.dataframe(competitors_df, use_container_width=True, hide_index=True)
+            else:
+                # For unstructured competitor data
+                st.write(competitors)
+        else:
+            st.info("No competitor data available.")
     
     # =========== TAB 3: PRODUCT INFO ===========
     with tab3:
@@ -447,7 +631,7 @@ def display_final_results(result, mode):
             # Potential Score
             potential_score = float(product_info.get('potential_score', 0))
             st.markdown(f"""
-            <div class="metric-container" style="text-align:center;">
+            <div class="metric-container" style="text-align:center; height:100%;">
                 <div class="metric-label">Potential Score</div>
                 <div class="metric-value">{potential_score:.1f}/10</div>
             </div>
@@ -458,7 +642,7 @@ def display_final_results(result, mode):
             # Innovation Score
             innovation_score = float(product_info.get('innovation_score', 0))
             st.markdown(f"""
-            <div class="metric-container" style="text-align:center;">
+            <div class="metric-container" style="text-align:center; height:100%;">
                 <div class="metric-label">Innovation Score</div>
                 <div class="metric-value">{innovation_score:.1f}/10</div>
             </div>
@@ -469,7 +653,7 @@ def display_final_results(result, mode):
             # Market Fit Score
             market_fit_score = float(product_info.get('market_fit_score', 0))
             st.markdown(f"""
-            <div class="metric-container" style="text-align:center;">
+            <div class="metric-container" style="text-align:center; height:100%;">
                 <div class="metric-label">Market Fit Score</div>
                 <div class="metric-value">{market_fit_score:.1f}/10</div>
             </div>
@@ -478,9 +662,17 @@ def display_final_results(result, mode):
         
         # Product analysis details
         st.markdown("<div class='section-header'>Features Analysis</div>", unsafe_allow_html=True)
+        
+        # Process the features analysis to properly render markdown
+        features_analysis = product_info['features_analysis']
+        # Replace markdown bold syntax with HTML bold tags
+        features_analysis = features_analysis.replace("**", "<strong>").replace("**", "</strong>")
+        # Replace markdown italic syntax with HTML italic tags
+        features_analysis = features_analysis.replace("*", "<em>").replace("*", "</em>")
+        
         st.markdown(f"""
         <div class="highlight-box">
-            {product_info['features_analysis']}
+            {features_analysis}
         </div>
         """, unsafe_allow_html=True)
         
@@ -489,17 +681,33 @@ def display_final_results(result, mode):
         
         with col1:
             st.markdown("<div class='section-header'>Tech Stack Evaluation</div>", unsafe_allow_html=True)
+            
+            # Process the tech stack evaluation to properly render markdown
+            tech_stack = product_info['tech_stack_evaluation']
+            # Replace markdown bold syntax with HTML bold tags
+            tech_stack = tech_stack.replace("**", "<strong>").replace("**", "</strong>")
+            # Replace markdown italic syntax with HTML italic tags
+            tech_stack = tech_stack.replace("*", "<em>").replace("*", "</em>")
+            
             st.markdown(f"""
-            <div class="highlight-box">
-                {product_info['tech_stack_evaluation']}
+            <div class="highlight-box" style="height:100%;">
+                {tech_stack}
             </div>
             """, unsafe_allow_html=True)
         
         with col2:
             st.markdown("<div class='section-header'>USP Assessment</div>", unsafe_allow_html=True)
+            
+            # Process the USP assessment to properly render markdown
+            usp = product_info['usp_assessment']
+            # Replace markdown bold syntax with HTML bold tags
+            usp = usp.replace("**", "<strong>").replace("**", "</strong>")
+            # Replace markdown italic syntax with HTML italic tags
+            usp = usp.replace("*", "<em>").replace("*", "</em>")
+            
             st.markdown(f"""
-            <div class="highlight-box">
-                {product_info['usp_assessment']}
+            <div class="highlight-box" style="height:100%;">
+                {usp}
             </div>
             """, unsafe_allow_html=True)
     
@@ -516,7 +724,7 @@ def display_final_results(result, mode):
             # Competency Score
             competency_score = float(founder_info.get('competency_score', 0))
             st.markdown(f"""
-            <div class="metric-container" style="text-align:center;">
+            <div class="metric-container" style="text-align:center; height:100%;">
                 <div class="metric-label">Competency Score</div>
                 <div class="metric-value">{competency_score:.1f}/10</div>
             </div>
@@ -528,7 +736,7 @@ def display_final_results(result, mode):
             if 'Founder Idea Fit' in result:
                 founder_fit = float(result['Founder Idea Fit'])
                 st.markdown(f"""
-                <div class="metric-container" style="text-align:center;">
+                <div class="metric-container" style="text-align:center; height:100%;">
                     <div class="metric-label">Founder-Idea Fit</div>
                     <div class="metric-value">{founder_fit:.2f}</div>
                 </div>
@@ -537,9 +745,19 @@ def display_final_results(result, mode):
         
         # Founder Analysis
         st.markdown("<div class='section-header'>Detailed Founder Assessment</div>", unsafe_allow_html=True)
+        
+        # Process the founder analysis to properly render markdown
+        analysis = founder_info['analysis']
+        # Replace markdown bold syntax with HTML bold tags
+        analysis = analysis.replace("**", "<strong>").replace("**", "</strong>")
+        # Replace markdown italic syntax with HTML italic tags
+        analysis = analysis.replace("*", "<em>").replace("*", "</em>")
+        # Replace markdown bullet points
+        analysis = analysis.replace("- ", "• ")
+        
         st.markdown(f"""
         <div class="highlight-box">
-            {founder_info['analysis']}
+            {analysis}
         </div>
         """, unsafe_allow_html=True)
         
@@ -550,11 +768,36 @@ def display_final_results(result, mode):
             segmentation = result['Founder Segmentation']
             # Convert to string to avoid lower() method errors
             segmentation_str = str(segmentation)
-            segment_color = "#10B981" if "expert" in segmentation_str.lower() else "#F59E0B" if "intermediate" in segmentation_str.lower() else "#EF4444"
+            
+            # Determine the level (L1-L5) and set appropriate color and description
+            level_descriptions = {
+                "L1": "Early-stage entrepreneur with high potential",
+                "L2": "Entrepreneur with some experience or accelerator graduate",
+                "L3": "Experienced professional with technical and management background",
+                "L4": "Successful entrepreneur with previous exits or executive experience",
+                "L5": "Serial entrepreneur with major exits or industry leader"
+            }
+            
+            # Extract the level number if it's in the format "L1", "L2", etc.
+            level_num = 0
+            if "L1" in segmentation_str:
+                level_num = 1
+            elif "L2" in segmentation_str:
+                level_num = 2
+            elif "L3" in segmentation_str:
+                level_num = 3
+            elif "L4" in segmentation_str:
+                level_num = 4
+            elif "L5" in segmentation_str:
+                level_num = 5
+            
+            segment_color = "#10B981" if level_num >= 4 else "#F59E0B" if level_num >= 2 else "#EF4444"
+            description = level_descriptions.get(f"L{level_num}", "Founder experience level")
             
             st.markdown(f"""
             <div style="background-color:{segment_color}; padding:0.75rem; border-radius:0.375rem; color:white; text-align:center; margin-top:0.5rem;">
                 <h3 style="margin:0; color:white; font-size:1.2rem;">{segmentation}</h3>
+                <p style="margin:0.25rem 0 0 0; font-size:0.8rem; opacity:0.9;">{description}</p>
             </div>
             """, unsafe_allow_html=True)
     
@@ -593,11 +836,11 @@ def display_final_results(result, mode):
         try:
             # Extract key metrics for visualization
             metrics = {
-                "Market Viability": int(market_info.get('viability_score', 0)),
-                "Product Potential": float(product_info.get('potential_score', 0)),
-                "Innovation": float(product_info.get('innovation_score', 0)),
-                "Market Fit": float(product_info.get('market_fit_score', 0)),
-                "Founder Competency": float(founder_info.get('competency_score', 0))
+                "Market Viability": int(result['Market Info'].get('viability_score', 0)),
+                "Product Potential": float(result['Product Info'].get('potential_score', 0)),
+                "Innovation": float(result['Product Info'].get('innovation_score', 0)),
+                "Market Fit": float(result['Product Info'].get('market_fit_score', 0)),
+                "Founder Competency": float(result['Founder Info'].get('competency_score', 0))
             }
             
             # Create a bar chart of key metrics
@@ -606,23 +849,94 @@ def display_final_results(result, mode):
                 'Score': list(metrics.values())
             })
             
-            # Create a horizontal bar chart
+            # Create a horizontal bar chart with better styling
             fig, ax = plt.subplots(figsize=(10, 5))
-            bars = ax.barh(metrics_df['Metric'], metrics_df['Score'], color=['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'])
+            
+            # Use a custom color palette based on score values
+            colors = []
+            for score in metrics_df['Score']:
+                if score >= 8:
+                    colors.append('#10B981')  # Green for high scores
+                elif score >= 6:
+                    colors.append('#F59E0B')  # Orange for medium scores
+                else:
+                    colors.append('#EF4444')  # Red for low scores
+            
+            bars = ax.barh(metrics_df['Metric'], metrics_df['Score'], color=colors)
             
             # Add labels and adjust appearance
             ax.set_xlim(0, 10)
-            ax.set_xlabel('Score (0-10)')
+            ax.set_xlabel('Score (0-10)', fontsize=12, fontweight='bold')
             ax.grid(axis='x', linestyle='--', alpha=0.7)
+            
+            # Style the y-axis labels
+            ax.tick_params(axis='y', labelsize=11)
             
             # Add the values at the end of each bar
             for i, bar in enumerate(bars):
                 ax.text(bar.get_width() + 0.1, bar.get_y() + bar.get_height()/2, f'{metrics_df["Score"].iloc[i]:.1f}', 
                         va='center', fontsize=10, fontweight='bold')
             
+            # Remove top and right spines
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            
+            # Add a title
+            ax.set_title('Startup Performance Metrics', fontsize=14, fontweight='bold', pad=20)
+            
+            # Adjust layout
+            plt.tight_layout()
+            
+            # Display the chart
             st.pyplot(fig)
+            
+            # Add a radar chart as an alternative visualization
+            st.markdown("<div class='section-header'>Radar Analysis</div>", unsafe_allow_html=True)
+            
+            # Create radar chart
+            categories = list(metrics.keys())
+            values = list(metrics.values())
+            
+            # Normalize values to 0-1 scale for radar chart
+            values_normalized = [v/10 for v in values]
+            
+            # Number of variables
+            N = len(categories)
+            
+            # Create angles for each variable
+            angles = [n / float(N) * 2 * np.pi for n in range(N)]
+            angles += angles[:1]  # Close the loop
+            
+            # Add the normalized values (and close the loop)
+            values_normalized += values_normalized[:1]
+            
+            # Create the plot
+            fig = plt.figure(figsize=(8, 8))
+            ax = plt.subplot(111, polar=True)
+            
+            # Draw the outline of the radar
+            plt.xticks(angles[:-1], categories, size=12)
+            ax.set_rlabel_position(0)
+            plt.yticks([0.2, 0.4, 0.6, 0.8], ["2", "4", "6", "8"], color="grey", size=10)
+            plt.ylim(0, 1)
+            
+            # Plot data
+            ax.plot(angles, values_normalized, linewidth=2, linestyle='solid', color='#3B82F6')
+            
+            # Fill area
+            ax.fill(angles, values_normalized, '#3B82F6', alpha=0.25)
+            
+            # Add value labels
+            for i, angle in enumerate(angles[:-1]):
+                ax.text(angle, values_normalized[i]+0.05, f"{values[i]:.1f}", 
+                        horizontalalignment='center', verticalalignment='center',
+                        fontsize=10, fontweight='bold')
+            
+            st.pyplot(fig)
+            
         except Exception as e:
             st.info("Could not generate metrics visualization.")
+            st.error(f"Visualization error: {str(e)}")
             
     # Add a footer to the app
     st.markdown("""

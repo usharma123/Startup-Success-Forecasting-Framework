@@ -49,10 +49,58 @@ class StartupFramework:
             market_analysis = self.market_agent.analyze(startup_info.model_dump(), mode="advanced")
             logger.info("Market Analysis completed successfully")
             logger.debug(f"Market analysis result: {market_analysis}")
+            
+            # If market_analysis is None, create a default empty one
+            if market_analysis is None:
+                from agents.market_agent import MarketAnalysis
+                logger.warning("Market analysis returned None, creating default empty analysis")
+                market_analysis = MarketAnalysis(
+                    total_addressable_market="No data available",
+                    serviceable_addressable_market="No data available",
+                    serviceable_obtainable_market="No data available",
+                    growth_rate="No data available",
+                    competition="No data available",
+                    competitors=[
+                        {"name": "Competitor 1", "description": "No data", "strengths": "No data", "weaknesses": "No data"},
+                        {"name": "Competitor 2", "description": "No data", "strengths": "No data", "weaknesses": "No data"},
+                    ],
+                    market_trends="No data available",
+                    viability_score=5
+                )
         except AttributeError as e:
             logger.error(f"Market agent not properly initialized: {str(e)}")
+            # Create default market analysis
+            from agents.market_agent import MarketAnalysis
+            market_analysis = MarketAnalysis(
+                total_addressable_market="Error occurred: Agent not initialized",
+                serviceable_addressable_market="Error occurred",
+                serviceable_obtainable_market="Error occurred",
+                growth_rate="Error occurred",
+                competition="Error occurred",
+                competitors=[
+                    {"name": "Competitor 1", "description": "No data", "strengths": "No data", "weaknesses": "No data"},
+                    {"name": "Competitor 2", "description": "No data", "strengths": "No data", "weaknesses": "No data"},
+                ],
+                market_trends="Error occurred",
+                viability_score=5
+            )
         except Exception as e:
             logger.error(f"Market analysis failed with error: {str(e)}", exc_info=True)
+            # Create default market analysis
+            from agents.market_agent import MarketAnalysis
+            market_analysis = MarketAnalysis(
+                total_addressable_market=f"Error occurred: {str(e)}",
+                serviceable_addressable_market="Error occurred",
+                serviceable_obtainable_market="Error occurred", 
+                growth_rate="Error occurred",
+                competition="Error occurred",
+                competitors=[
+                    {"name": "Competitor 1", "description": "No data", "strengths": "No data", "weaknesses": "No data"},
+                    {"name": "Competitor 2", "description": "No data", "strengths": "No data", "weaknesses": "No data"},
+                ],
+                market_trends="Error occurred",
+                viability_score=5
+            )
 
         logger.info("=== Ending Market Analysis Phase ===")
 
@@ -66,15 +114,35 @@ class StartupFramework:
         founder_segmentation = self.founder_agent.segment_founder(startup_info.founder_backgrounds)
         founder_idea_fit = self.founder_agent.calculate_idea_fit(startup_info.model_dump(), startup_info.founder_backgrounds)
 
-        # Integrate analyses
-        integrated_analysis = self.integration_agent.integrated_analysis_pro(
-            market_info=market_analysis.model_dump(),
-            product_info=product_analysis.model_dump(),
-            founder_info=founder_analysis.model_dump(),  
-            founder_idea_fit=founder_idea_fit,
-            founder_segmentation=founder_segmentation,
-            rf_prediction=prediction,
-        )
+        # Integrate analyses with safety checks
+        try:
+            # Ensure market_analysis is not None and has model_dump method
+            market_info = market_analysis.model_dump() if hasattr(market_analysis, 'model_dump') else {}
+            
+            # Ensure product_analysis is not None and has model_dump method
+            product_info = product_analysis.model_dump() if hasattr(product_analysis, 'model_dump') else {}
+            
+            # Ensure founder_analysis is not None and has model_dump method
+            founder_info = founder_analysis.model_dump() if hasattr(founder_analysis, 'model_dump') else {}
+            
+            integrated_analysis = self.integration_agent.integrated_analysis_pro(
+                market_info=market_info,
+                product_info=product_info,
+                founder_info=founder_info,  
+                founder_idea_fit=founder_idea_fit,
+                founder_segmentation=founder_segmentation,
+                rf_prediction=prediction,
+            )
+        except Exception as e:
+            logger.error(f"Integration failed with error: {str(e)}", exc_info=True)
+            # Create a basic fallback integrated analysis
+            from agents.integration_agent import FinalDecision
+            integrated_analysis = FinalDecision(
+                overall_score=5.0,
+                outcome="Analysis Failed",
+                recommendation="Try again with more complete information",
+                IntegratedAnalysis=f"The analysis failed to complete successfully. Error: {str(e)}"
+            )
 
         quant_decision = self.integration_agent.getquantDecision(
             prediction,
