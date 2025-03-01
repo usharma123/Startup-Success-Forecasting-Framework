@@ -11,7 +11,6 @@ from agents.base_agent import BaseAgent
 from utils.api_wrapper import GoogleSearchAPI
 from pydantic import BaseModel, Field
 
-<<<<<<< HEAD
 from typing import List, Dict, Any, Union
 
 class CompetitorInfo(BaseModel):
@@ -32,7 +31,6 @@ class MarketAnalysis(BaseModel):
 
     class Config:
         extra = "ignore"
-=======
 class FinancialData(BaseModel):
     revenue: str = Field(default="N/A", description="Company revenue information")
     funding: str = Field(default="N/A", description="Funding information and history")
@@ -58,7 +56,6 @@ class AdvancedMarketAnalysis(MarketAnalysis):
     competition_analysis: str = Field(..., description="Detailed analysis of competitors")
     growth_potential: str = Field(..., description="Analysis of future growth potential")
     market_analysis: str = Field(..., description="Comprehensive market analysis")
->>>>>>> 902eacd (fuck the market agent, can't add anything without breaking it. I will diagnose this later)
 
 class MarketAgent(BaseAgent):
     def __init__(self, model="gpt-4o-mini"):
@@ -105,7 +102,6 @@ class MarketAgent(BaseAgent):
         market_info = self._get_market_info(startup_info)
         self.logger.debug(f"Market info: {market_info}")
         
-<<<<<<< HEAD
         # Create a basic analysis without using get_json_response to avoid schema issues
         try:
             # Get a regular response instead of structured JSON
@@ -163,17 +159,14 @@ class MarketAgent(BaseAgent):
                 market_trends="Error in analysis",
                 viability_score=5
             )
-=======
         # Basic analysis (default mode)
         if mode == "basic":
             analysis = self.get_json_response(MarketAnalysis, self._get_analysis_prompt(), market_info)
             self.logger.info("Basic analysis completed")
             return analysis
->>>>>>> 902eacd (fuck the market agent, can't add anything without breaking it. I will diagnose this later)
         
         # Advanced analysis with external data
         if mode == "advanced":
-<<<<<<< HEAD
             self.logger.info("Starting advanced analysis")
             try:
                 external_knowledge = self._get_external_knowledge(startup_info)
@@ -225,7 +218,6 @@ class MarketAgent(BaseAgent):
                 # If advanced analysis fails, return the basic analysis
                 self.logger.info("Using fallback basic analysis")
                 return analysis
-=======
             self.logger.info("Starting advanced analysis with financial data")
             external_knowledge = self._get_external_knowledge(startup_info)
             self.logger.debug(f"External knowledge gathered")
@@ -257,7 +249,6 @@ class MarketAgent(BaseAgent):
             
             self.logger.info("Advanced analysis with financial data completed")
             return advanced_analysis
->>>>>>> 902eacd (fuck the market agent, can't add anything without breaking it. I will diagnose this later)
         
         # Natural language analysis mode
         if mode == "natural_language_advanced":
@@ -291,7 +282,6 @@ class MarketAgent(BaseAgent):
                 trend_analysis=trend_analysis
             )
             
-<<<<<<< HEAD
             try:
                 nl_advanced_analysis = self.get_response(prompt, "Formulate a professional and comprehensive analysis please.")
                 self.logger.info("Natural language analysis completed")
@@ -326,7 +316,6 @@ class MarketAgent(BaseAgent):
                     market_trends="Analysis failed",
                     viability_score=5
                 )
-=======
             nl_advanced_analysis = self.get_response(prompt, "Formulate a professional and comprehensive analysis please.")
             self.logger.info("Natural language analysis completed")
             
@@ -336,7 +325,6 @@ class MarketAgent(BaseAgent):
                 'financial_data': financial_data,
                 'trend_analysis': trend_analysis
             }
->>>>>>> 902eacd (fuck the market agent, can't add anything without breaking it. I will diagnose this later)
         
         # Default to basic analysis
         analysis = self.get_json_response(MarketAnalysis, self._get_analysis_prompt(), market_info)
@@ -619,7 +607,6 @@ class MarketAgent(BaseAgent):
         As an experienced market analyst, provide an in-depth analysis of the startup's market based on the following information:
         {market_info}
 
-<<<<<<< HEAD
         Include insights from the additional external research provided.
         Provide a comprehensive analysis including:
         1. Total Addressable Market (TAM) - the total market demand for a product or service
@@ -637,7 +624,6 @@ class MarketAgent(BaseAgent):
         - Forward-looking trends that will impact the market in the next 3-5 years
 
         Conclude with a market viability score from 1 to 10, factoring in the external data.
-=======
         Include insights from the additional external research, financial data, and trend analysis provided.
         
         Your analysis should cover:
@@ -677,7 +663,6 @@ class MarketAgent(BaseAgent):
         
         Provide a well-reasoned market viability score from 1 to 10, with detailed justification that incorporates 
         all aspects of your analysis including market fundamentals, financial health, and trend analysis.
->>>>>>> 902eacd (fuck the market agent, can't add anything without breaking it. I will diagnose this later)
         """
     
     def natural_language_analysis_prompt(self):
@@ -705,7 +690,6 @@ class MarketAgent(BaseAgent):
         Market trend analysis:
         {trend_analysis}
 
-<<<<<<< HEAD
         Your intern has researched more around the following topic for you as context {keywords}.
 
         The research result: {external_knowledge}
@@ -724,7 +708,6 @@ class MarketAgent(BaseAgent):
         Analyze step by step to formulate your comprehensive analysis to answer the questions proposed above.
 
         Also conclude with a market viability score from 1 to 10. 
-=======
         Provide a systematic analysis addressing:
         - Market size and growth rate with specific figures/percentages when available
         - Current market saturation and competition landscape
@@ -737,7 +720,6 @@ class MarketAgent(BaseAgent):
         1. A market viability score (1-10) with detailed justification
         2. Key financial metrics and their implications
         3. Critical market trends that will affect this business
->>>>>>> 902eacd (fuck the market agent, can't add anything without breaking it. I will diagnose this later)
         """
 
     def _get_keyword_generation_prompt(self):

@@ -515,7 +515,6 @@ def display_final_results(result, mode):
             </div>
             """, unsafe_allow_html=True)
         
-<<<<<<< HEAD
         # Market Size information in three distinct sections - TAM, SAM, SOM
         st.markdown("<div class='section-header'>Market Size Metrics</div>", unsafe_allow_html=True)
         
@@ -644,7 +643,6 @@ def display_final_results(result, mode):
                 st.write(competitors)
         else:
             st.info("No competitor data available.")
-=======
         # Create tabs for market analysis sections
         market_tab1, market_tab2, market_tab3 = st.tabs(["Overview", "Financial Data", "Trend Analysis"])
         
@@ -819,7 +817,6 @@ def display_final_results(result, mode):
                     """, unsafe_allow_html=True)
             else:
                 st.info("Detailed trend analysis not available for this startup.")
->>>>>>> 902eacd (fuck the market agent, can't add anything without breaking it. I will diagnose this later)
     
     # =========== TAB 3: PRODUCT INFO ===========
     with tab3:
