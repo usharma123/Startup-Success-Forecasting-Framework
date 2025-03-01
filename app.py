@@ -4,10 +4,6 @@ import os
 import time
 import traceback
 import logging
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-from PIL import Image
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,11 +13,41 @@ logger = logging.getLogger(__name__)
 project_root = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, project_root)
 
+# Import required packages with error handling
+try:
+    import pandas as pd
+except ImportError:
+    st.error("pandas is not installed. Please install it with: pip install pandas")
+    logger.error("pandas import error")
+
+try:
+    import matplotlib.pyplot as plt
+    import numpy as np
+except ImportError:
+    st.error("matplotlib or numpy is not installed. Please install them with: pip install matplotlib numpy")
+    logger.error("matplotlib or numpy import error")
+
+try:
+    from PIL import Image
+except ImportError:
+    logger.warning("PIL is not installed. Some image features may not work.")
+
+# Import the framework with detailed error handling
 try:
     from ssff_framework import StartupFramework
+    logger.info("Successfully imported StartupFramework")
 except Exception as e:
-    logger.error(f"Failed to import StartupFramework: {str(e)}")
-    raise
+    error_msg = f"Failed to import StartupFramework: {str(e)}"
+    logger.error(error_msg)
+    logger.error(f"Traceback: {traceback.format_exc()}")
+    
+    # Define a fallback class to prevent the app from crashing completely
+    class StartupFramework:
+        def __init__(self, *args, **kwargs):
+            self.error = error_msg
+            
+        def analyze_startup(self, *args, **kwargs):
+            return {"error": self.error}
 
 # Custom CSS
 def load_custom_css():
@@ -130,7 +156,7 @@ def main():
     # Custom header with logo if available
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown('<div class="main-header">Startup Success Forecasting Framework</div>', unsafe_allow_html=True)
+        st.markdown('<div class="main-header">Startup Evaluation Framework</div>', unsafe_allow_html=True)
     
     # Introduction
     with st.expander("About this Framework"):
@@ -489,6 +515,7 @@ def display_final_results(result, mode):
             </div>
             """, unsafe_allow_html=True)
         
+<<<<<<< HEAD
         # Market Size information in three distinct sections - TAM, SAM, SOM
         st.markdown("<div class='section-header'>Market Size Metrics</div>", unsafe_allow_html=True)
         
@@ -617,6 +644,182 @@ def display_final_results(result, mode):
                 st.write(competitors)
         else:
             st.info("No competitor data available.")
+=======
+        # Create tabs for market analysis sections
+        market_tab1, market_tab2, market_tab3 = st.tabs(["Overview", "Financial Data", "Trend Analysis"])
+        
+        # TAB 1: MARKET OVERVIEW
+        with market_tab1:
+            # Create columns for market metrics
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Market Size
+                st.markdown("<div class='section-header'>Market Size</div>", unsafe_allow_html=True)
+                size_value = market_info.get('market_size', 'N/A')
+                st.markdown(f"""
+                <div class="metric-container">
+                    <div class="metric-value">{size_value}</div>
+                    <div class="metric-description">💡 Total addressable market (TAM) potential</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Competition Analysis
+                st.markdown("<div class='section-header'>Competitive Landscape</div>", unsafe_allow_html=True)
+                competition_value = market_info.get('competition', 'N/A')
+                st.markdown(f"""
+                <div class="highlight-box">
+                    {competition_value}
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                # Growth Rate
+                st.markdown("<div class='section-header'>Growth Rate</div>", unsafe_allow_html=True)
+                growth_value = market_info.get('growth_rate', 'N/A')
+                st.markdown(f"""
+                <div class="metric-container">
+                    <div class="metric-value">{growth_value}</div>
+                    <div class="metric-description">💡 Compound annual growth rate (CAGR) projection</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Market Trends
+                st.markdown("<div class='section-header'>Market Trends</div>", unsafe_allow_html=True)
+                trends_value = market_info.get('market_trends', 'N/A')
+                if trends_value != 'N/A':
+                    trends_list = [trend.strip() for trend in trends_value.split(',')]
+                    trends_html = "".join([f"<li>{trend}</li>" for trend in trends_list])
+                    st.markdown(f"""
+                    <div class="highlight-box">
+                        <ul style="margin: 0; padding-left: 1.2rem;">{trends_html}</ul>
+                    </div>
+                    """, unsafe_allow_html=True)
+        
+        # TAB 2: FINANCIAL DATA
+        with market_tab2:
+            # Check if financial data exists in the result
+            if 'financials' in market_info:
+                financials = market_info.get('financials', {})
+                
+                # Header for financial section
+                st.markdown("<div class='section-header'>Company Financial Analysis</div>", unsafe_allow_html=True)
+                
+                # Create two columns for financial metrics
+                fin_col1, fin_col2 = st.columns(2)
+                
+                with fin_col1:
+                    # Revenue
+                    st.markdown("<div class='section-header'>Revenue</div>", unsafe_allow_html=True)
+                    revenue_value = financials.get('revenue', 'N/A')
+                    st.markdown(f"""
+                    <div class="metric-container">
+                        <div class="metric-value">{revenue_value}</div>
+                        <div class="metric-description">💰 Company revenue information</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Valuation
+                    st.markdown("<div class='section-header'>Valuation</div>", unsafe_allow_html=True)
+                    valuation_value = financials.get('valuation', 'N/A')
+                    st.markdown(f"""
+                    <div class="metric-container">
+                        <div class="metric-value">{valuation_value}</div>
+                        <div class="metric-description">📈 Company valuation estimate</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with fin_col2:
+                    # Funding
+                    st.markdown("<div class='section-header'>Funding</div>", unsafe_allow_html=True)
+                    funding_value = financials.get('funding', 'N/A')
+                    st.markdown(f"""
+                    <div class="metric-container">
+                        <div class="metric-value">{funding_value}</div>
+                        <div class="metric-description">💸 Funding history and rounds</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Burn Rate & Runway
+                    st.markdown("<div class='section-header'>Burn Rate & Runway</div>", unsafe_allow_html=True)
+                    burn_rate = financials.get('burn_rate', 'N/A')
+                    runway = financials.get('runway', 'N/A')
+                    st.markdown(f"""
+                    <div class="metric-container">
+                        <div style="display: flex; justify-content: space-between;">
+                            <div>
+                                <div style="font-size: 0.875rem; color: #64748B;">Burn Rate</div>
+                                <div style="font-size: 1.25rem; font-weight: 600; color: #0F172A;">{burn_rate}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.875rem; color: #64748B;">Runway</div>
+                                <div style="font-size: 1.25rem; font-weight: 600; color: #0F172A;">{runway}</div>
+                            </div>
+                        </div>
+                        <div class="metric-description">⏱️ Financial sustainability metrics</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("Detailed financial data not available for this startup.")
+                
+        # TAB 3: TREND ANALYSIS
+        with market_tab3:
+            # Check if trend analysis exists in the result
+            if 'trends' in market_info:
+                trends = market_info.get('trends', {})
+                
+                # Header for trends section
+                st.markdown("<div class='section-header'>Market Trend Analysis</div>", unsafe_allow_html=True)
+                
+                # Current Trends
+                st.markdown("<div class='section-header'>Current Market Trends</div>", unsafe_allow_html=True)
+                current_trends = trends.get('current_trends', 'N/A')
+                st.markdown(f"""
+                <div class="highlight-box">
+                    {current_trends}
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Growth Direction
+                st.markdown("<div class='section-header'>Market Growth Direction</div>", unsafe_allow_html=True)
+                growth_direction = trends.get('growth_direction', 'N/A')
+                
+                # Set color based on growth direction
+                direction_color = "#10B981" if "accelerating" in growth_direction.lower() else \
+                                "#F59E0B" if "stable" in growth_direction.lower() else \
+                                "#EF4444" if "declining" in growth_direction.lower() else "#3B82F6"
+                
+                st.markdown(f"""
+                <div style="background-color:{direction_color}; padding:0.75rem; border-radius:0.375rem; color:white; text-align:center; margin-top:0.5rem;">
+                    <h3 style="margin:0; color:white; font-size:1.2rem;">{growth_direction}</h3>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Create columns for opportunities and threats
+                opp_col1, opp_col2 = st.columns(2)
+                
+                with opp_col1:
+                    # Opportunities
+                    st.markdown("<div class='section-header'>Emerging Opportunities</div>", unsafe_allow_html=True)
+                    opportunities = trends.get('emerging_opportunities', 'N/A')
+                    st.markdown(f"""
+                    <div class="highlight-box" style="border-left: 4px solid #10B981;">
+                        {opportunities}
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with opp_col2:
+                    # Threats
+                    st.markdown("<div class='section-header'>Potential Threats</div>", unsafe_allow_html=True)
+                    threats = trends.get('potential_threats', 'N/A')
+                    st.markdown(f"""
+                    <div class="highlight-box" style="border-left: 4px solid #EF4444;">
+                        {threats}
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("Detailed trend analysis not available for this startup.")
+>>>>>>> 902eacd (fuck the market agent, can't add anything without breaking it. I will diagnose this later)
     
     # =========== TAB 3: PRODUCT INFO ===========
     with tab3:
